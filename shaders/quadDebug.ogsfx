@@ -1,0 +1,58 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// quadDebug.glsl (GLSL)
+// Brief: Debugging operations
+// Copyright: 2020 Artineering and/or its licensors
+// License: MIT
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// COMMON MAYA VARIABLES
+uniform mat4 gWVP : WorldViewProjection;
+
+// TEXTURES
+uniform Texture2D gInputTex;
+uniform sampler2D gInputSampler = sampler_state {
+    Texture = <gInputTex>;
+};
+
+// VARIABLES
+uniform vec4 gColorChannels = { 1.0, 1.0, 1.0, 0.0 };
+
+// VERTEX SHADER
+attribute appData {
+	vec3 vertex : POSITION;
+};
+
+attribute vertexOutput { };
+
+GLSLShader quadVert {
+	void main() {
+		gl_Position = gWVP * vec4(vertex, 1.0f);
+	}
+}
+
+// PIXEL SHADER
+attribute fragmentOutput {
+    // Output to one target
+	vec4 result : COLOR0;
+};
+
+GLSLShader debugPix {
+    main() {
+        ivec2 loc = ivec2(gl_FragCoord.xy);
+        vec4 tex = texelFetch(gInputSampler, loc, 0);
+
+        // channel debugger
+        if (gColorChannels.a > 0) {
+            result = vec4(tex.a, tex.a, tex.a, tex.a);
+        } else {
+            result = vec4(gColorChannels.r * tex.r, gColorChannels.g * tex.g, gColorChannels.b * tex.b, tex.a);
+        }  
+    }
+}
+
+// TECHNIQUES
+technique debug {
+    pass p0 {
+        VertexShader(in appData, out vertexOutput) = quadVert;
+        PixelShader(in vertexOutput, out fragmentOutput) = { debugPix };
+    }
+}
